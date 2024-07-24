@@ -27,13 +27,34 @@ while True:
     # 컨투어 검출
     contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
-    # 가장 큰 컨투어 찾기
-    if contours:
-        largest_contour = max(contours, key=cv2.contourArea)
-        ((x, y), radius) = cv2.minEnclosingCircle(largest_contour)
-        
-        if radius > 10:  # 임의의 최소 반지름 값 설정
-            cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 0), 4)
+    # 사각형을 찾기 위해 모든 컨투어를 반복
+    for contour in contours:
+        approx = cv2.approxPolyDP(contour, 0.02 * cv2.arcLength(contour, True), True)
+        if len(approx) == 4:  # 사각형은 꼭짓점이 4개여야 함
+            (x, y, w, h) = cv2.boundingRect(approx)
+            aspect_ratio = float(w) / h
+            if 0.9 <= aspect_ratio <= 1.1:  # 사각형의 종횡비가 1에 가까워야 함
+                # 사각형 내부 ROI 추출
+                roi = frame[y:y+h, x:x+w]
+                roi_gray = gray[y:y+h, x:x+w]
+                
+                # ROI에서 다시 적응형 이진화 적용
+                roi_thresh = cv2.adaptiveThreshold(
+                    roi_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2
+                )
+                
+                # ROI에서 Canny 엣지 검출
+                roi_edges = cv2.Canny(roi_thresh, 50, 150)
+                
+                # ROI에서 원 검출
+                roi_contours, _ = cv2.findContours(roi_edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                for roi_contour in roi_contours:
+                    ((cx, cy), radius) = cv2.minEnclosingCircle(roi_contour)
+                    if radius > 10:  # 임의의 최소 반지름 값 설정
+                        cv2.circle(roi, (int(cx), int(cy)), int(radius), (0, 255, 0), 4)
+                
+                # 원이 그려진 ROI를 원래 이미지에 반영
+                frame[y:y+h, x:x+w] = roi
 
     # 결과 프레임 표시
     cv2.imshow("USB Camera", frame)
