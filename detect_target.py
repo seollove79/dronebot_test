@@ -15,19 +15,25 @@ while True:
 
     # 이미지 전처리
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    gray = cv2.GaussianBlur(gray, (15, 15), 0)
+    
+    # 적응형 이진화 적용
+    adaptive_thresh = cv2.adaptiveThreshold(
+        gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2
+    )
     
     # Canny 엣지 검출
-    edges = cv2.Canny(gray, 50, 150)
+    edges = cv2.Canny(adaptive_thresh, 50, 150)
     
-    # 허프 변환을 사용한 원 검출
-    circles = cv2.HoughCircles(edges, cv2.HOUGH_GRADIENT, dp=1.2, minDist=100, param1=50, param2=30, minRadius=100, maxRadius=150)
-
-    # 원이 검출되면 표시
-    if circles is not None:
-        circles = np.round(circles[0, :]).astype("int")
-        for (x, y, r) in circles:
-            cv2.circle(frame, (x, y), r, (0, 255, 0), 4)
+    # 컨투어 검출
+    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+    # 가장 큰 컨투어 찾기
+    if contours:
+        largest_contour = max(contours, key=cv2.contourArea)
+        ((x, y), radius) = cv2.minEnclosingCircle(largest_contour)
+        
+        if radius > 10:  # 임의의 최소 반지름 값 설정
+            cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 0), 4)
 
     # 결과 프레임 표시
     cv2.imshow("USB Camera", frame)
