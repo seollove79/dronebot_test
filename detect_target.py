@@ -38,6 +38,7 @@ while True:
                 roi = frame[y:y+h, x:x+w]
                 roi_gray = gray[y:y+h, x:x+w]
                 
+
                 # ROI에서 다시 적응형 이진화 적용
                 roi_thresh = cv2.adaptiveThreshold(
                     roi_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2
@@ -48,13 +49,20 @@ while True:
                 
                 # ROI에서 원 검출
                 roi_contours, _ = cv2.findContours(roi_edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                found_circle = False
                 for roi_contour in roi_contours:
                     ((cx, cy), radius) = cv2.minEnclosingCircle(roi_contour)
-                    if radius > 10:  # 임의의 최소 반지름 값 설정
-                        cv2.circle(roi, (int(cx), int(cy)), int(radius), (0, 255, 0), 4)
-                
-                # 원이 그려진 ROI를 원래 이미지에 반영
-                frame[y:y+h, x:x+w] = roi
+                    if (radius > 10 and
+                        (x < cx - radius < x + w) and
+                        (y < cy - radius < y + h) and
+                        (x < cx + radius < x + w) and
+                        (y < cy + radius < y + h)):  # 원이 완전히 사각형 내부에 있는지 확인
+                        found_circle = True
+                        cv2.circle(frame, (int(cx), int(cy)), int(radius), (0, 255, 0), 4)
+                        break  # 원을 찾으면 더 이상 탐색하지 않음
+
+                if found_circle:
+                    cv2.drawContours(frame, [approx], -1, (255, 0, 0), 2)
 
     # 결과 프레임 표시
     cv2.imshow("USB Camera", frame)
