@@ -1,3 +1,4 @@
+# opencv 만으로 타겟 인식하기 위한 테스트 코드
 import cv2
 import numpy as np
 
