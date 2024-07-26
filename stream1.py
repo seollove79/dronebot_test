@@ -7,12 +7,9 @@ from gi.repository import Gst, GLib
 def start_rtsp_client():
     Gst.init(None)
 
-    # rtsp_url 설정
-    rtsp_url = "rtsp://192.168.144.108:554/stream=1"
-
     # RTSP 스트림을 수신하기 위한 파이프라인
     pipeline = Gst.parse_launch(
-            f"rtspsrc location={rtsp_url} latency=0 ! queue ! decodebin ! videoconvert ! video/x-raw,format=BGR ! videorate ! video/x-raw,framerate=30/1 ! appsink name=sink max-buffers=1 drop=true"
+        "rtspsrc location=rtsp://192.168.144.108:554/stream=1 latency=50 ! decodebin ! autovideosink"
     )
 
     # 파이프라인 상태를 재생으로 변경
