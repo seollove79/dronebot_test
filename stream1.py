@@ -9,7 +9,7 @@ def start_rtsp_client():
 
     # RTSP 스트림을 수신하기 위한 파이프라인
     pipeline = Gst.parse_launch(
-        "rtspsrc location=rtsp://192.168.144.108:554/stream=1 latency=50 ! decodebin ! autovideosink"
+        "rtspsrc location=rtsp://192.168.144.108:554/stream=1 latency=0 ! decodebin ! autovideosink"
     )
 
     # 파이프라인 상태를 재생으로 변경
